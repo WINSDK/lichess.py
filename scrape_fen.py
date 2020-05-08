@@ -1,3 +1,4 @@
+#!/usr/bin/python3.7
 from bs4 import BeautifulSoup
 import chess.engine
 import chess
@@ -17,18 +18,15 @@ async def processing(FEN): # Parses FEN into stockfish/engine of choice
     ############################## Settings end
 
     board = chess.Board(FEN)
-    if board.is_stalemate() == True:
-        await exit()
-    if board.is_game_over() == True:
-        await exit()
-    if board.is_insufficient_material() == True:
-        await exit()
-
     result = await engine.play(board, chess.engine.Limit(depth=20))
     result = re.search(r"\((.*)\)>", str(result))
     result = re.sub('info={}, ', '', result.group(1))
-
     await engine.quit()
+
+    if board.is_stalemate() or board.is_game_over() or board.is_insufficient_material() == True:
+        print("+----------------| game finished |----------------+")
+        exit()
+
     print(board)
     print(result)
 
@@ -44,15 +42,14 @@ if __name__ == "__main__":
     asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
     dryscrape.start_xvfb()
     session = dryscrape.Session()
-
     url = input("Enter lichess URL: ")
     clr = input("Enter playing side (b or w): ")
     FEN = ""
 
-    while True: # Checks whether an update in the chessboard occurred
+    while True: 
         check = grabber()
-        sides = re.search('\s(w|b)\s', check)
-        if check != FEN and sides.group(1) == clr:
+        sides = re.search(r'\s(w|b)\s', check)
+        if check != FEN and sides.group(1) == clr: # Checks whether an update in the chessboard occurred
             asyncio.run(processing(check))
             logging.debug(f'Inverted  FEN: {check}')
         FEN = check
