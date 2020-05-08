@@ -1,6 +1,6 @@
 # lichess.py
 yeah I cheat at chess, no I don't care. Program just parses the FEN from a lichess game and then pipes it into stockfish.
- #### _make sure to run the executable within the upper directory_
+ #### make sure to insert your prefered version of stockfish or any other UCI engine in _/bin/_
 
 
 ## Requirements:
