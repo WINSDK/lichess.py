@@ -1,31 +1,30 @@
-#!/usr/bin/python3.7
+#!/usr/bin/python3.8
 from bs4 import BeautifulSoup
 import chess.engine
 import chess
 import re
+import os
 import logging
 import asyncio
 import dryscrape
 
 async def processing(FEN): # Parses FEN into stockfish/engine of choice
-    transport, engine = await chess.engine.popen_uci("/bin/stockfish") 
-
+    transport, engine = await chess.engine.popen_uci(f"{os.environ['HOME']}/.local/bin/lc0") 
+    
     ############################## Settings start
-    await engine.configure({"Hash": 16})
-    await engine.configure({"Threads": 5})
-    await engine.configure({"Slow Mover": 100})
-    await engine.configure({"SyzygyProbeDepth": 1})
+    await engine.configure({"RamLimitMb": 4096})
+    await engine.configure({"Threads": 10})
     ############################## Settings end
-
+    
     board = chess.Board(FEN)
-    result = await engine.play(board, chess.engine.Limit(depth=20))
+    try:
+        result = await engine.play(board, chess.engine.Limit(time=5))
+    except:
+        print("+----------------| game finished |----------------+")
+        exit()
     result = re.search(r"\((.*)\)>", str(result))
     result = re.sub('info={}, ', '', result.group(1))
     await engine.quit()
-
-    if board.is_stalemate() or board.is_game_over() or board.is_insufficient_material() == True:
-        print("+----------------| game finished |----------------+")
-        exit()
 
     print(board)
     print(result)
