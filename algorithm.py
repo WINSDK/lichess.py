@@ -1,13 +1,12 @@
 #!/usr/bin/python3.8
 from PyQt5.QtWidgets import QLabel, QMainWindow, QDesktopWidget, QApplication
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 from bs4 import BeautifulSoup
-from multiprocessing import Process
+import concurrent.futures
 import chess.engine
 import chess.svg
 import chess
-import time
 import sys
 import re
 import sys
@@ -19,6 +18,7 @@ import dryscrape
 class Incubator(QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setWindowTitle('Chess Board Representation')
         self.initUI()
 
     def initUI(self):
@@ -34,12 +34,12 @@ class Incubator(QMainWindow):
         self.move(qr.topLeft())
 
     def content(self):
-        self.setWindowTitle('Chess Board Representation')
         pixmap = QPixmap("pos.svg")
         label = QLabel(self)
         label.setPixmap(pixmap)
         label.setAlignment(Qt.AlignCenter)
         self.setCentralWidget(label)
+        self.update()
 
 
 async def processing(FEN):  # Parses FEN into stockfish/engine of choice
@@ -83,7 +83,6 @@ async def processing(FEN):  # Parses FEN into stockfish/engine of choice
             move_to = itr
         itr += 1
 
-
     with open(f"pos.svg", 'w') as f:
         f.write(chess.svg.board(board=board, size=700, flipped=True, arrows=[(move_from, move_to)]))
 
@@ -96,8 +95,7 @@ def grabber():  # sends GET request to lichess & filters out FEN
     return FEN.group(1)
 
 
-def runtime():
-    FEN = None
+def runtime(FEN):
     while True:
         check = grabber()
         sides = re.search(r'\s(w|b)\s', check)
@@ -113,13 +111,13 @@ if __name__ == "__main__":
     asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
     dryscrape.start_xvfb()
     session = dryscrape.Session()
+    FEN = None
     url = input("Enter lichess URL: ")
     clr = input("Enter playing side (b or w): ")
-    p1 = Process(target=runtime, daemon=True)
-    p1.start()
-    time.sleep(2)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(runtime, FEN)
     win = Incubator()
-    timer = QTimer()
-    timer.start(500)
-    timer.timeout.connect(win.content)
+    timer = QtCore.QTimer()
+    timer.timeout.connect(win.content())
+    timer.start(3000)
     sys.exit(app.exec_())
