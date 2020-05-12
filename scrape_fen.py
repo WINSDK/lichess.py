@@ -10,7 +10,6 @@ import chess
 import time
 import sys
 import re
-import sys
 import logging
 import asyncio
 import dryscrape
@@ -100,7 +99,7 @@ def runtime():
     FEN = None
     while True:
         check = grabber()
-        sides = re.search(r'\s(w|b)\s', check)
+        sides = re.search(r'\s(w|b)\s', check)c
         if check != FEN and sides.group(1) == clr:  # Checks whether an update in the chessboard occurred
             asyncio.run(processing(check))
             logging.debug(f'Inverted  FEN: {check}')
