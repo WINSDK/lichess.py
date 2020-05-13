@@ -47,11 +47,11 @@ async def processing(FEN):  # Parses FEN into stockfish/engine of choice
 
     ############################## Settings start
     await engine.configure({"RamLimitMb": 4096})
-    await engine.configure({"Threads": 10})
+    await engine.configure({"Threads": 2})
     ############################## Settings end
 
     board = chess.Board(FEN)
-    result = await engine.play(board, chess.engine.Limit(time=3))
+    result = await engine.play(board, chess.engine.Limit(time=2.5))
     result = re.search(r"\((.*)\)>", str(result))
     result = re.sub('info={}, ', '', result.group(1))
     await engine.quit()
