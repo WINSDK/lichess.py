@@ -1,6 +1,6 @@
 # lichess.py
 yeah I cheat at chess, no I don't care. Program just parses the FEN from a lichess game and then pipes it into stockfish.
- #### make sure to insert lczero in the default /bin/stockfish
+ #### make sure to insert stockfish in the default /bin/stockfish
 
 
 ## Requirements:
