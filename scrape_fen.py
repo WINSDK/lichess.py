@@ -82,9 +82,14 @@ async def processing(FEN):  # Parses FEN into stockfish/engine of choice
             move_to = itr
         itr += 1
 
-
+    flipping = None
+    sides = re.search(r'\s(w|b)\s', FEN)
+    if sides.group(1) == 'b':
+        flipping = True
+    else:
+        flipping = False
     with open(f"pos.svg", 'w') as f:
-        f.write(chess.svg.board(board=board, size=700, flipped=True, arrows=[(move_from, move_to)]))
+        f.write(chess.svg.board(board=board, size=700, flipped=flipping, arrows=[(move_from, move_to)]))
 
 
 def grabber():  # sends GET request to lichess & filters out FEN
@@ -99,7 +104,7 @@ def runtime():
     FEN = None
     while True:
         check = grabber()
-        sides = re.search(r'\s(w|b)\s', check)c
+        sides = re.search(r'\s(w|b)\s', check)
         if check != FEN and sides.group(1) == clr:  # Checks whether an update in the chessboard occurred
             asyncio.run(processing(check))
             logging.debug(f'Inverted  FEN: {check}')
