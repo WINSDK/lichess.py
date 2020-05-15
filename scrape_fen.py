@@ -1,16 +1,15 @@
 #!/usr/bin/python3.8
 from PyQt5.QtWidgets import QLabel, QMainWindow, QDesktopWidget, QApplication
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QFileSystemWatcher
+from PyQt5.QtCore import Qt, QFileSystemWatcher
+from PyQt5.QtGui import QPixmap
+from threading import Thread
 from bs4 import BeautifulSoup
-from threading import Thread, Lock
+from os import environ
 import chess.engine
 import chess.svg
 import chess
-import time
 import sys
 import re
-import os
 import logging
 import asyncio
 import dryscrape
@@ -24,8 +23,7 @@ class Incubator(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        i = 1
-        self.i = i
+        self.i = 1
         self.centering()
         self.content()
         self.show()
@@ -47,7 +45,7 @@ class Incubator(QMainWindow):
 
 
 async def processing(FEN):  # Parses FEN into stockfish/engine of choice
-    transport, engine = await chess.engine.popen_uci(f"{os.environ['HOME']}/.local/bin/lc0") 
+    transport, engine = await chess.engine.popen_uci(f"{environ['HOME']}/.local/bin/lc0") 
 
     ############################## Settings start
     await engine.configure({"RamLimitMb": 4096})
@@ -91,7 +89,7 @@ async def processing(FEN):  # Parses FEN into stockfish/engine of choice
         flipping = True
     else:
         flipping = False
-    with open(f"pos.svg", 'w') as f:
+    with open("pos.svg", 'w') as f:
         f.write(chess.svg.board(board=board, size=700, flipped=flipping, arrows=[(move_from, move_to)]))
 
 
