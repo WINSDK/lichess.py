@@ -1,15 +1,16 @@
 #!/usr/bin/python3.8
 from PyQt5.QtWidgets import QLabel, QMainWindow, QDesktopWidget, QApplication
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QFileSystemWatcher
 from bs4 import BeautifulSoup
-from multiprocessing import Process
+from threading import Thread, Lock
 import chess.engine
 import chess.svg
 import chess
 import time
 import sys
 import re
+import os
 import logging
 import asyncio
 import dryscrape
@@ -18,10 +19,13 @@ import dryscrape
 class Incubator(QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setWindowTitle('Chess Board Representation')
+        self.setFixedSize(700, 700)
         self.initUI()
 
     def initUI(self):
-        self.setFixedSize(700, 700)
+        i = 1
+        self.i = i
         self.centering()
         self.content()
         self.show()
@@ -33,12 +37,13 @@ class Incubator(QMainWindow):
         self.move(qr.topLeft())
 
     def content(self):
-        self.setWindowTitle('Chess Board Representation')
-        pixmap = QPixmap("pos.svg")
-        label = QLabel(self)
-        label.setPixmap(pixmap)
-        label.setAlignment(Qt.AlignCenter)
-        self.setCentralWidget(label)
+        self.i += 1
+        if self.i % 2 == 0:
+            pixmap = QPixmap("pos.svg")
+            label = QLabel(self)
+            label.setPixmap(pixmap)
+            label.setAlignment(Qt.AlignCenter)
+            self.setCentralWidget(label)
 
 
 async def processing(FEN):  # Parses FEN into stockfish/engine of choice
@@ -100,13 +105,15 @@ def grabber():  # sends GET request to lichess & filters out FEN
     return FEN.group(1)
 
 
-def runtime():
-    FEN = None
+def runtime(FEN):
+    global waiting
+    waiting = True
     while True:
         check = grabber()
         sides = re.search(r'\s(w|b)\s', check)
         if check != FEN and sides.group(1) == clr:  # Checks whether an update in the chessboard occurred
             asyncio.run(processing(check))
+            waiting = False
             logging.debug(f'Inverted  FEN: {check}')
         FEN = check
 
@@ -119,11 +126,11 @@ if __name__ == "__main__":
     session = dryscrape.Session()
     url = input("Enter lichess URL: ")
     clr = input("Enter playing side (b or w): ")
-    p1 = Process(target=runtime, daemon=True)
+    p1 = Thread(target=runtime, args=(" "), daemon=True)
     p1.start()
-    time.sleep(2)
+    while waiting:
+        pass
     win = Incubator()
-    timer = QTimer()
-    timer.start(500)
-    timer.timeout.connect(win.content)
-    sys.exit(app.exec_())
+    watcher = QFileSystemWatcher(['pos.svg'])
+    watcher.fileChanged.connect(win.content)
+    sys.exit(app.exec())
