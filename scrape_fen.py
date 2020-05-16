@@ -122,8 +122,7 @@ if __name__ == "__main__":
     session = dryscrape.Session()
     url = input("Enter lichess URL: ")
     clr = input("Enter playing side (b or w): ")
-    p1 = Thread(target=runtime, args=(" "), daemon=True)
-    p1.start()
+    p1 = Thread(target=runtime, args=(" "), daemon=True).start()
     while waiting:
         pass
     win = Incubator()
