@@ -3,10 +3,12 @@ from PyQt5.QtWidgets import QLabel, QMainWindow, QDesktopWidget, QApplication
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QFileSystemWatcher
 from bs4 import BeautifulSoup
-from threading import Thread, Lock
+from threading import Thread
+from time import sleep
 import chess.engine
 import chess.svg
 import chess
+import locker
 import time
 import sys
 import re
@@ -24,8 +26,7 @@ class Incubator(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        i = 1
-        self.i = i
+        self.i = 1
         self.centering()
         self.content()
         self.show()
@@ -49,12 +50,12 @@ class Incubator(QMainWindow):
 async def processing(FEN):  # Parses FEN into stockfish/engine of choice
     transport, engine = await chess.engine.popen_uci("/bin/stockfish")
 
-    ############################## Settings start
+    # Settings start
     await engine.configure({"Hash": 16})
     await engine.configure({"Threads": 5})
     await engine.configure({"Slow Mover": 10})
     await engine.configure({"SyzygyProbeDepth": 1})
-    ############################## Settings end
+    # Settings end
 
     board = chess.Board(FEN)
     result = await engine.play(board, chess.engine.Limit(time=0.5))
@@ -106,14 +107,13 @@ def grabber():  # sends GET request to lichess & filters out FEN
 
 
 def runtime(FEN):
-    global waiting
-    waiting = True
     while True:
         check = grabber()
         sides = re.search(r'\s(w|b)\s', check)
-        if check != FEN and sides.group(1) == clr:  # Checks whether an update in the chessboard occurred
+        # Checks whether an update in the chessboard occurred
+        if check != FEN and sides.group(1) == clr:
             asyncio.run(processing(check))
-            waiting = False
+            locker.unlock()
             logging.debug(f'Inverted  FEN: {check}')
         FEN = check
 
@@ -128,9 +128,10 @@ if __name__ == "__main__":
     clr = input("Enter playing side (b or w): ")
     p1 = Thread(target=runtime, args=(" "), daemon=True)
     p1.start()
-    while waiting:
-        pass
+    while locker.islocked():
+        sleep(0.05)
     win = Incubator()
     watcher = QFileSystemWatcher(['pos.svg'])
     watcher.fileChanged.connect(win.content)
     sys.exit(app.exec())
+
