@@ -1,5 +1,5 @@
 # lichess.py
-yeah I cheat at chess, no I don't care. Program just parses the FEN from a lichess game and then pipes it into lczero.
+Program just parses the FEN from a lichess game and then pipes it into lczero.
 #### make sure to build lc0 in the directory: ~.local/bin
 
 
