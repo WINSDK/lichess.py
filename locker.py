@@ -25,4 +25,3 @@ def islocked() -> bool:
 
 
 instance = GIL()
-

@@ -1,21 +1,21 @@
 #!/usr/bin/python3.8
-from PyQt5.QtWidgets import QLabel, QMainWindow, QDesktopWidget, QApplication
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QFileSystemWatcher
-from bs4 import BeautifulSoup
+import asyncio
+import logging
+import re
+import sys
 from threading import Thread
 from time import sleep
+
+import chess
 import chess.engine
 import chess.svg
-import chess
-import locker
-import time
-import sys
-import re
-import os
-import logging
-import asyncio
+from bs4 import BeautifulSoup
+from PyQt5.QtCore import QFileSystemWatcher, Qt
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QApplication, QDesktopWidget, QLabel, QMainWindow
+
 import dryscrape
+import locker
 
 
 class Incubator(QMainWindow):
@@ -48,7 +48,7 @@ class Incubator(QMainWindow):
 
 
 async def processing(FEN):  # Parses FEN into stockfish/engine of choice
-    transport, engine = await chess.engine.popen_uci("/bin/stockfish")
+    _, engine = await chess.engine.popen_uci("/bin/stockfish")
 
     # Settings start
     await engine.configure({"Hash": 16})
@@ -65,7 +65,7 @@ async def processing(FEN):  # Parses FEN into stockfish/engine of choice
 
     if board.is_stalemate() or board.is_game_over() or board.is_insufficient_material() is True:
         print("+----------------| game finished |----------------+")
-        exit()
+        sys.exit()
 
     move_from = result[5:7].upper()
     move_to = result[7:9].upper()
@@ -90,15 +90,15 @@ async def processing(FEN):  # Parses FEN into stockfish/engine of choice
 
     flipping = None
     sides = re.search(r'\s(w|b)\s', FEN)
-    if sides.group(1) == 'b':
-        flipping = True
-    else:
-        flipping = False
-    with open(f"pos.svg", 'w') as f:
+
+    flipping = sides.group(1) == 'b'
+
+    with open("pos.svg", 'w') as f:
         f.write(chess.svg.board(board=board, size=700, flipped=flipping, arrows=[(move_from, move_to)]))
 
 
-def grabber():  # sends GET request to lichess & filters out FEN
+def grabber():
+    """Sends GET request to lichess & filters out FEN"""
     session.visit(url)
     soup = BeautifulSoup(session.body(), "lxml")
     script = soup.body.findAll('script')
@@ -114,7 +114,7 @@ def runtime(FEN):
         if check != FEN and sides.group(1) == clr:
             asyncio.run(processing(check))
             locker.unlock()
-            logging.debug(f'Inverted  FEN: {check}')
+            logging.debug('Inverted FEN: {val}', val=check)
         FEN = check
 
 
@@ -134,4 +134,3 @@ if __name__ == "__main__":
     watcher = QFileSystemWatcher(['pos.svg'])
     watcher.fileChanged.connect(win.content)
     sys.exit(app.exec())
-
