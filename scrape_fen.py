@@ -80,13 +80,11 @@ async def processing(FEN):  # Parses FEN into stockfish/engine of choice
         "A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8",
     ]
 
-    itr = 0
-    for square in SQUARES:
+    for i, square in enumerate(SQUARES):
         if move_from == square:
-            move_from = itr
+            move_from = i
         if move_to == square:
-            move_to = itr
-        itr += 1
+            move_to = i
 
     flipping = None
     sides = re.search(r'\s(w|b)\s', FEN)
